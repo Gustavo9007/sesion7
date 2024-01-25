@@ -9,3 +9,10 @@ gitcreds_set()
 a <- c(50, 90, 50)
 b <- 100
 c <- 900
+
+mtcars
+
+gitcreds_set()
+gitcreds_get()
+
+str(mtcars)
