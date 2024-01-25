@@ -7,3 +7,4 @@ y <- rnorm(100)
 gitcreds_set()
 
 a <- c(50, 90, 50)
+b <- 100
