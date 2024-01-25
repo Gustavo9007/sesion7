@@ -9,6 +9,3 @@ gitcreds_set()
 a <- c(50, 90, 50)
 b <- 100
 c <- 900
-
-d <- c(a,b,c)
-print(d)
