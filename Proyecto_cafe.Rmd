@@ -1,0 +1,155 @@
+---
+title: "Proyecto café"
+output: html_notebook
+---
+
+```{r Carga y visualización de daos}
+datos <- read.csv("datos_cafe.csv", header = TRUE)
+colnames(datos)
+datos
+table(datos$Species)
+head(datos)
+tail(datos)
+str(datos)
+```
+
+
+```{r Selección de columnas}
+library(dplyr)
+
+datos_dos <- select(datos,Species, Country.of.Origin,Company,altitude_mean_meters,Region,Number.of.Bags, Bag.Weight, Variety, Aroma,Flavor,Aftertaste,Acidity,Body,Balance,Uniformity,Clean.Cup,Sweetness,Cupper.Points,Total.Cup.Points,Moisture)
+
+head(datos_dos)
+dim(datos_dos)
+
+```
+
+
+```{r Cambio de nombres}
+library(reshape)
+names(datos_dos)
+datos_dos <- rename(datos_dos, c(Species = "Especie", Country.of.Origin = "País", Company = "Compañia", altitude_mean_meters = "Altitud", Number.of.Bags = "Número de bolsas", Bag.Weight = "Peso del producto",Variety = "Variedad", Flavor = "Sabor", Aftertaste = "Postgusto", Acidity = "Acidez", Body = "Cuerpo", Uniformity = "Uniformidad", Clean.Cup = "Pulcritud", Sweetness = "Dulzor", Cupper.Points = "Puntuación", Total.Cup.Points = "Puntuación total", Moisture = "Humedad"))
+
+head(datos_dos)
+```
+
+
+```{r Cambio de varaible  y eliminación de NA}
+library(stringr)
+head(datos_dos)
+class(datos_dos$`Peso del producto`)
+print(datos_dos$`Peso del producto`)
+
+## Quita todo lo que no sea número 
+datos_dos$`Peso del producto` <- as.numeric(gsub("[^0-9.]", "", datos_dos$`Peso del producto`))
+
+#Eliminamos los NAs
+sum(is.na(datos_dos))
+datos_tres <- na.omit(datos_dos)
+sum(is.na(datos_tres))
+
+dim(datos_tres)
+
+write.csv(datos_tres, "Cafe_baseC.csv", row.names = FALSE)
+```
+
+
+```{r Explorando un poco los datos de producto}
+## País con mayor producto vendido
+library(ggplot2)
+unique(datos_tres$País)
+colnames(datos_tres)
+
+ventas <- aggregate(`Número de bolsas` ~ País, data = datos_tres, sum)
+
+ventas
+
+max <- ventas$País[which.max(ventas$`Número de bolsas`)]
+min <- ventas$País[which.min(ventas$`Número de bolsas`)]
+
+max_bolsas <- max(ventas$`Número de bolsas`)
+min_bolsas <- min(ventas$`Número de bolsas`)
+
+cat("El país que producto vende es", max, "con un total de", max_bolsas, "bolsas.")
+
+ggplot(ventas, aes(x = País, y = `Número de bolsas`)) +
+  geom_bar(stat = "sum", fill = "blue")+
+  labs(title = "Número de producto vendido por país", 
+       x = "País", 
+       y = "Producto") + 
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+```
+
+
+```{r Distribucion de las especies por país}
+
+conteo_sp <- datos_tres %>%
+  group_by(País, Especie)%>%
+  summarise(Count = n())
+
+table(conteo_sp$Especie)
+
+#subset(datos_tres, Especie == "Robusta")
+
+ggplot(conteo_sp, aes(x = País, y = Count, fill = Especie))+
+         geom_bar(stat = "identity", position = "stack")+
+  labs(title = "Cantidad de especies por país",
+       x = "País",
+       y = "Cantidad")+
+  theme_bw() +
+   theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+
+```{r Comparación de algunas varaibles de calidad por especie}
+datos_tres$`Puntuación total`
+
+grafica_scat <- ggplot(datos_tres, aes(x = Cuerpo, y = Aroma, colour = `Puntuación total`))+
+  geom_point()+
+  theme_grey()+
+  facet_wrap("Especie")
+
+grafica_scat
+
+names(datos_tres)
+```
+
+
+```{r Observación de la relación entre las varaibles de calidad}
+library(scatterplot3d)
+
+##Seleccionamos las varaibles a graficar
+datos_quality <- datos_tres[c("Aroma", "Sabor", "Postgusto", "Acidez", "Cuerpo", "Balance", "Uniformidad", "Pulcritud", "Dulzor", "Puntuación total")]
+
+summary(datos_quality)
+pairs(datos_quality, main = "Gráfico de pares para variables de calidad del café")
+```
+
+```{r Observación del total de puntos de la cata por variedad}
+datos_tres %>% 
+  ggplot(aes(`Puntuación total`, fill = Variedad)) +
+  geom_histogram(binwidth = 2) +
+  facet_wrap(~Variedad, scales = "free_y") +
+  theme(legend.position = "none")
+```
+
+
+```{r Visualización de la humedad por especie}
+ggplot(datos_tres, aes(x = Especie, y = Humedad)) + 
+  geom_boxplot() + 
+  ggtitle("Comparación de la humedad entre dos especies") +
+  theme_gray()
+
+table(datos_tres$Especie)
+```
+
+
+
+
+
+
+
+
